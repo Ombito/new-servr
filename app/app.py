@@ -25,7 +25,7 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_FILE_DIR'] = 'session_dir'
 app.config['JSONIFY_PRETTYPRINT_REGULAR']= True
 
-
+# add models
 db.init_app(app)
 api = Api(app)
 migrate = Migrate(app, db)
