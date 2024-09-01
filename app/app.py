@@ -38,7 +38,7 @@ class Index(Resource):
         headers = {}
         return make_response(response_body,status,headers)
     
-    # login route
+    
 class LoginUser(Resource):
     def post(self):
         email  = request.get_json().get('email')
