@@ -33,7 +33,7 @@ Session(app)
 
 class Index(Resource):
     def get(self):
-        response_body = '<h1>Hello World</h1>'
+        response_body = '<h1>Welcome</h1>'
         status = 200
         headers = {}
         return make_response(response_body,status,headers)
@@ -119,7 +119,6 @@ class CheckSession(Resource):
 
     
 
-    #  all users route
 class UserResource(Resource):
     def get(self):
         users = [user.to_dict() for user in User.query.all()]
@@ -141,8 +140,6 @@ class UsersByID(Resource):
 
 
 api.add_resource(Index,'/', endpoint='landing')
-
-    # user resources
 api.add_resource(UserResource, '/users', endpoint='users')
 api.add_resource(UsersByID, '/users/<int:id>')
 api.add_resource(CheckSession,'/session_user',endpoint='session_user' )
