@@ -25,7 +25,7 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_FILE_DIR'] = 'session_dir'
 app.config['JSONIFY_PRETTYPRINT_REGULAR']= True
 
-# add models
+
 db.init_app(app)
 api = Api(app)
 migrate = Migrate(app, db)
@@ -206,6 +206,7 @@ class Payment(Resource):
     def process_payment():
         data = request.get_json()
         order = Order.query.get(data['order_id'])
+
         
         if not order:
             return jsonify({"message": "Order not found"}), 404
