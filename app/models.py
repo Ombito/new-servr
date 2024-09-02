@@ -7,19 +7,18 @@ from datetime import datetime
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 
-
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    full_name = db.Column(db.String(100))
-    email = db.Column(db.String(100), unique=True)
-    username = db.Column(db.String(50), unique=True)
-    _password_hash = db.Column(db.String(100), nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    _password_hash = db.Column(db.String(128), nullable=False)
 
-    courses = db.relationship('Course', backref='user')
-    orders = db.relationship('OrderRecord', backref='user')
-    serialize_rules = ('-courses.user', '-orders.user',)
+    orders = db.relationship('Order', backref='user', lazy=True, cascade="all, delete-orphan")
+
+    serialize_rules = ('-orders.user',)
 
     @hybrid_property
     def password_hash(self):
@@ -32,35 +31,34 @@ class User(db.Model, SerializerMixin):
     def authenticate(self, password):
         return bcrypt.check_password_hash(self._password_hash, password.encode("utf-8"))
 
-
 class Order(db.Model, SerializerMixin):
     __tablename__ = 'orders'
 
-
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     tracking_id = db.Column(db.String(50), unique=True, nullable=False)
-    status = db.Column(db.String(50), default='Pending')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(50), default='Pending', nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     total_amount = db.Column(db.Float, nullable=False)
 
-    serialize_rules = ('-user.orders',)
+    payments = db.relationship('Payment', backref='order', lazy=True, cascade="all, delete-orphan")
 
-class Payment(db.Model):
+    serialize_rules = ('-user.orders', '-payments.order')
+
+class Payment(db.Model, SerializerMixin):
     __tablename__ = 'payments'
 
-
     id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     payment_method = db.Column(db.String(50), nullable=False)
     payment_details = db.Column(db.Text, nullable=False)
-    payment_date = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(50), default='Completed')
+    payment_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    status = db.Column(db.String(50), default='Completed', nullable=False)
 
-
+    serialize_rules = ('-order.payments',)
 
 class Newsletter(db.Model, SerializerMixin):
     __tablename__ = 'newsletters'
 
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
