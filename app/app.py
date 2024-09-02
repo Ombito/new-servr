@@ -1,7 +1,7 @@
 from flask_cors import CORS
 from flask import Flask, jsonify, request, session, make_response
 from flask_restful import Api, Resource
-from models import db, User
+from models import db, User, Order
 from flask_migrate import Migrate
 from werkzeug.exceptions import NotFound
 import os
@@ -138,6 +138,92 @@ class UsersByID(Resource):
         return response
     
 
+class OrderResource(Resource):
+    def get(self):
+        all_orders = [order.to_dict() for  order in Order.query.all()]
+        
+        return make_response(jsonify(all_orders),200)
+
+        
+    def post(self):
+        data = request.get_json()
+
+        tracking_id = data.get('tracking_id')
+        total_amount = data.get('total_amount')
+        location = data.get('location')
+        status = data.get('status')
+        user_id=data.get('user_id')
+
+        if tracking_id and total_amount and location:
+            new_order = Order(tracking_id=tracking_id, total_amount=total_amount, location=location, status=status, user_id=user_id)
+
+            db.session.add(new_order)
+            db.session.commit()
+      
+            return make_response(jsonify(new_order.to_dict(), 201))
+        
+        return {"error": "Order details must be added"}, 422
+    
+
+
+class OrderRecordById(Resource):
+    def get(self,id):
+        pass
+        order_record=Order.query.filter_by(id=id).first().to_dict()
+
+        return make_response(jsonify(order_record),200)
+    
+
+    def patch(self, id):
+        order = Order.query.filter_by(id=id).first()
+
+        if order:
+            for attr in request.get_json():
+                setattr(order,attr,request.get_json()[attr])
+
+                db.session.add(order)
+                db.session.commit()
+            return make_response(jsonify(order.to_dict(), 200)) 
+        
+        
+        return {"error": "Order record not found"}, 404
+
+
+    def delete(self, id):
+        order = Order.query.filter_by(id=id).first()
+
+        if order:
+            db.session.delete(order)
+            db.session.commit()
+            return {"message": "Order record deleted successfully"}, 200
+        else:
+            return {"error": "Order record not found"}, 404
+    
+
+
+
+class Payment(Resource):
+    def process_payment():
+        data = request.get_json()
+        order = Order.query.get(data['order_id'])
+        
+        if not order:
+            return jsonify({"message": "Order not found"}), 404
+        
+        new_payment = Payment(
+            order_id=order.id,
+            payment_method=data['payment_method'],
+            payment_details=data['payment_details']
+        )
+        db.session.add(new_payment)
+        db.session.commit()
+
+        order.payment_status = 'Paid'
+        db.session.commit()
+
+        return jsonify({"message": "Payment processed successfully"}), 200
+
+
 
 api.add_resource(Index,'/', endpoint='landing')
 api.add_resource(UserResource, '/users', endpoint='users')
@@ -146,6 +232,9 @@ api.add_resource(CheckSession,'/session_user',endpoint='session_user' )
 api.add_resource(SignupUser, '/signup_user', endpoint='signup')
 api.add_resource(LoginUser, '/login_user', endpoint='login')
 api.add_resource(Logout, '/logout', endpoint='logout')
+# api.add_resource(TrackOrder, '/orders/<int:id>')
+api.add_resource(OrderResource,'/orders', endpoint='order')
+api.add_resource(OrderRecordById, '/orders/<int:id>', endpoint='ordersbyid')
 
 
 @app.before_request
