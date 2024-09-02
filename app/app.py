@@ -1,7 +1,7 @@
 from flask_cors import CORS
 from flask import Flask, jsonify, request, session, make_response
 from flask_restful import Api, Resource
-from models import db, User, Order
+from models import db, User, Order, Payment
 from flask_migrate import Migrate
 from werkzeug.exceptions import NotFound
 import os
